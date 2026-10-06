@@ -1,0 +1,20 @@
+# Secrets must never enter the build context or an image layer.
+.env
+.env.*
+!.env.example
+
+# Build output and tooling
+**/bin/
+**/obj/
+**/TestResults/
+.git/
+.vs/
+.vscode/
+.idea/
+*.user
+
+# Not needed to build the API image
+tests/
+docker-compose*.yml
+Dockerfile
+README.md

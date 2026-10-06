@@ -1,0 +1,58 @@
+# Usage:  cp .env.example .env   (fill in real values)   then   docker compose up --build
+# Every secret comes from .env; ${VAR:?} makes compose refuse to start if one is missing.
+
+services:
+  mysql:
+    image: mysql:8.0
+    # Headroom for the 500-request concurrency tests (default is 151).
+    command: ["--max-connections=1000"]
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-inventory}
+      MYSQL_USER: ${MYSQL_USER:-inventory}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
+    ports:
+      # Loopback only: reachable by local tools and the test suite, never from the network.
+      # The API reaches MySQL over the internal compose network.
+      - "127.0.0.1:${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    restart: unless-stopped
+
+  inventory-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: inventory-api:local
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+      ConnectionStrings__DefaultConnection: "Server=mysql;Port=3306;Database=${MYSQL_DATABASE:-inventory};User=${MYSQL_USER:-inventory};Password=${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}"
+      Database__MigrateOnStartup: "true"
+      Jwt__SigningKey: ${JWT_SIGNING_KEY:?Set JWT_SIGNING_KEY in .env (at least 32 bytes)}
+      # Optional bootstrap admin; leave DEMO_ADMIN_PASSWORD empty to seed nobody.
+      SeedUsers__0__Username: ${DEMO_ADMIN_USERNAME:-admin}
+      SeedUsers__0__Password: ${DEMO_ADMIN_PASSWORD:-}
+      SeedUsers__0__Role: Admin
+      # Off unless explicitly enabled (.env.example enables it for local review).
+      Swagger__Enabled: ${SWAGGER_ENABLED:-false}
+    ports:
+      - "${API_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && head -n 1 <&3 | grep -q ' 200 '"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+volumes:
+  mysql-data:
