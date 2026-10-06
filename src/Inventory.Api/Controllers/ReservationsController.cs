@@ -1,8 +1,8 @@
-using Inventory.Application.Reservations;
 using Inventory.Api.RateLimiting;
+using Inventory.Application.Reservations;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Inventory.Api.Controllers;
 

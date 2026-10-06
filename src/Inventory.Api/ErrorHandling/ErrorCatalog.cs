@@ -52,7 +52,7 @@ public static class ErrorCatalog
         NotFoundException ex => new(StatusCodes.Status404NotFound, NotFound, "Not found", ex.Message),
 
         DuplicateSkuException ex => new(StatusCodes.Status409Conflict, DuplicateSku, "Duplicate SKU", ex.Message),
-        Application.Reservations.InsufficientStockException ex =>
+        InsufficientStockException ex =>
             new(StatusCodes.Status409Conflict, InsufficientStock, "Insufficient inventory", ex.Message),
         ReservationConcurrencyException ex =>
             new(StatusCodes.Status409Conflict, ReservationModified, "Reservation was modified", ex.Message),
@@ -62,8 +62,6 @@ public static class ErrorCatalog
             new(StatusCodes.Status409Conflict, InvalidReservationState, "Invalid reservation state", ex.Message),
         ReservationExpiredException ex =>
             new(StatusCodes.Status409Conflict, ReservationExpired, "Reservation expired", ex.Message),
-        Domain.Exceptions.InsufficientStockException ex =>
-            new(StatusCodes.Status409Conflict, InsufficientStock, "Insufficient inventory", ex.Message),
         DomainException ex => new(StatusCodes.Status400BadRequest, BusinessRuleViolation, "Business rule violation", ex.Message),
 
         TemporarilyUnavailableException ex =>

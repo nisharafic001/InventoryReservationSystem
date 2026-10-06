@@ -59,6 +59,7 @@ public sealed class ReservationService(
         logger.LogInformation(
             "Reservation {ReservationId} confirmed for product {ProductId}, quantity {Quantity}.",
             reservation.Id, reservation.ProductId, reservation.Quantity);
+
         return ReservationResponse.From(reservation);
     }
 

@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Logging.Abstractions;
 using Inventory.Application.Abstractions;
 using Inventory.Application.Abstractions.Persistence;
 using Inventory.Application.Common.Exceptions;
@@ -7,7 +6,7 @@ using Inventory.Application.Reservations;
 using Inventory.Domain.Entities;
 using Inventory.Domain.Enums;
 using Inventory.Domain.Exceptions;
-using InsufficientStockException = Inventory.Application.Reservations.InsufficientStockException;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Inventory.UnitTests.Application;
 
@@ -21,7 +20,11 @@ public class ReservationServiceTests
 
     public ReservationServiceTests()
     {
-        _service = new ReservationService(_repository, new StubCurrentUser("user-42"), new FixedTimeProvider(Now), NullLogger<ReservationService>.Instance);
+        _service = new ReservationService(
+            _repository,
+            new StubCurrentUser("user-42"),
+            new FixedTimeProvider(Now),
+            NullLogger<ReservationService>.Instance);
     }
 
     [Fact]

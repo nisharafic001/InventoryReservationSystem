@@ -14,11 +14,24 @@ public sealed class ReservationRepository(AppDbContext dbContext) : IReservation
     public Task<StockReservationOutcome> ReserveStockAndAddAsync(Reservation reservation, CancellationToken cancellationToken) =>
         Retry(() => ReserveStockAndAddOnceAsync(reservation, cancellationToken), cancellationToken);
 
+    public Task<Reservation?> GetByIdAsync(Guid id, CancellationToken cancellationToken) =>
+        dbContext.Reservations.AsNoTracking().SingleOrDefaultAsync(r => r.Id == id, cancellationToken);
+
     public Task<bool> ConfirmAsync(Reservation reservation, CancellationToken cancellationToken) =>
         Retry(() => ConfirmOnceAsync(reservation, cancellationToken), cancellationToken);
 
     public Task<bool> CancelAsync(Reservation reservation, CancellationToken cancellationToken) =>
         Retry(() => CancelOnceAsync(reservation, cancellationToken), cancellationToken);
+
+    public async Task<IReadOnlyList<Reservation>> GetDueForExpiryAsync(
+        DateTime nowUtc, int maxCount, CancellationToken cancellationToken) =>
+        // Served by IX_Reservations_Status_ExpiresAtUtc.
+        await dbContext.Reservations
+            .AsNoTracking()
+            .Where(r => r.Status == ReservationStatus.Active && r.ExpiresAtUtc <= nowUtc)
+            .OrderBy(r => r.ExpiresAtUtc)
+            .Take(maxCount)
+            .ToListAsync(cancellationToken);
 
     public Task<bool> ExpireAsync(Reservation reservation, DateTime nowUtc, CancellationToken cancellationToken) =>
         Retry(() => ExpireOnceAsync(reservation, nowUtc, cancellationToken), cancellationToken);
@@ -73,9 +86,6 @@ public sealed class ReservationRepository(AppDbContext dbContext) : IReservation
         await transaction.CommitAsync(cancellationToken);
         return StockReservationOutcome.Reserved;
     }
-
-    public Task<Reservation?> GetByIdAsync(Guid id, CancellationToken cancellationToken) =>
-        dbContext.Reservations.AsNoTracking().SingleOrDefaultAsync(r => r.Id == id, cancellationToken);
 
     private async Task<bool> ConfirmOnceAsync(Reservation reservation, CancellationToken cancellationToken)
     {
@@ -148,16 +158,6 @@ public sealed class ReservationRepository(AppDbContext dbContext) : IReservation
         return true;
     }
 
-    public async Task<IReadOnlyList<Reservation>> GetDueForExpiryAsync(
-        DateTime nowUtc, int maxCount, CancellationToken cancellationToken) =>
-        // Served by IX_Reservations_Status_ExpiresAtUtc.
-        await dbContext.Reservations
-            .AsNoTracking()
-            .Where(r => r.Status == ReservationStatus.Active && r.ExpiresAtUtc <= nowUtc)
-            .OrderBy(r => r.ExpiresAtUtc)
-            .Take(maxCount)
-            .ToListAsync(cancellationToken);
-
     private async Task<bool> ExpireOnceAsync(Reservation reservation, DateTime nowUtc, CancellationToken cancellationToken)
     {
         EnsureStatus(reservation, ReservationStatus.Expired);
@@ -180,6 +180,7 @@ public sealed class ReservationRepository(AppDbContext dbContext) : IReservation
             return false;
         }
 
+        // Release the hold, in the same transaction as the state change.
         await MoveStockAsync(
             reservation,
             nowUtc,

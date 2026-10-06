@@ -5,7 +5,6 @@ using Inventory.Application.Abstractions.Persistence;
 using Inventory.Application.Products;
 using Inventory.Domain.Enums;
 using Inventory.IntegrationTests.Support;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 

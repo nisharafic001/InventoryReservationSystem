@@ -47,49 +47,9 @@ public sealed class Product
         return new Product(Guid.NewGuid(), sku, name, totalQuantity, nowUtc);
     }
 
-    /// <summary>Moves stock from available to reserved.</summary>
-    public void Reserve(int quantity, DateTime nowUtc)
-    {
-        EnsurePositive(quantity);
-        if (quantity > AvailableQuantity)
-            throw new InsufficientStockException(Id, quantity, AvailableQuantity);
-
-        ReservedQuantity += quantity;
-        UpdatedAtUtc = nowUtc;
-    }
-
-    /// <summary>Returns reserved stock to available (reservation cancelled or expired).</summary>
-    public void ReleaseReservation(int quantity, DateTime nowUtc)
-    {
-        EnsurePositive(quantity);
-        if (quantity > ReservedQuantity)
-            throw new DomainException($"Cannot release {quantity}; only {ReservedQuantity} reserved.");
-
-        ReservedQuantity -= quantity;
-        UpdatedAtUtc = nowUtc;
-    }
-
-    /// <summary>Moves stock from reserved to sold (reservation confirmed).</summary>
-    public void ConfirmSale(int quantity, DateTime nowUtc)
-    {
-        EnsurePositive(quantity);
-        if (quantity > ReservedQuantity)
-            throw new DomainException($"Cannot sell {quantity}; only {ReservedQuantity} reserved.");
-
-        ReservedQuantity -= quantity;
-        SoldQuantity += quantity;
-        UpdatedAtUtc = nowUtc;
-    }
-
     private static void EnsureNotNegative(int value, string name)
     {
         if (value < 0)
             throw new DomainException($"{name} cannot be negative.");
-    }
-
-    private static void EnsurePositive(int quantity)
-    {
-        if (quantity <= 0)
-            throw new DomainException("Quantity must be greater than zero.");
     }
 }
