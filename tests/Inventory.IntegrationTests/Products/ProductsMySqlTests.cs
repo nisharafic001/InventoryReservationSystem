@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Inventory.IntegrationTests.Products;
 
 /// <summary>
-/// End-to-end tests through the real API, EF Core, and MySQL. Skipped unless INVENTORY_TEST_MYSQL is set.
+/// End-to-end tests through the real API, EF Core, and MySQL.
 /// </summary>
 public class ProductsMySqlTests(MySqlDatabaseFixture database) : IClassFixture<MySqlDatabaseFixture>
 {
@@ -19,7 +19,7 @@ public class ProductsMySqlTests(MySqlDatabaseFixture database) : IClassFixture<M
 
     private static string UniqueSku() => $"SKU-{Guid.NewGuid():N}"[..20];
 
-    [MySqlFact]
+    [Fact]
     public async Task PostThenGet_RoundTripsThroughMySql()
     {
         using var client = CreateClient();
@@ -39,7 +39,7 @@ public class ProductsMySqlTests(MySqlDatabaseFixture database) : IClassFixture<M
         Assert.Equal(DateTimeKind.Utc, row.CreatedAtUtc.Kind);
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task Post_DuplicateSku_Returns409()
     {
         using var client = CreateClient();
@@ -51,7 +51,7 @@ public class ProductsMySqlTests(MySqlDatabaseFixture database) : IClassFixture<M
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task Repository_AddAsync_DuplicateSkuRace_IsTranslatedByUniqueIndex()
     {
         // Simulates two requests that both passed the SkuExists pre-check.

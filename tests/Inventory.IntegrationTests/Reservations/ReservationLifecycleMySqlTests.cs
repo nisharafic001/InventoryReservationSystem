@@ -10,7 +10,6 @@ namespace Inventory.IntegrationTests.Reservations;
 
 /// <summary>
 /// Confirm/cancel through the real API, EF Core and MySQL, including concurrent races.
-/// Skipped unless INVENTORY_TEST_MYSQL is set.
 /// </summary>
 public class ReservationLifecycleMySqlTests(MySqlDatabaseFixture database) : IClassFixture<MySqlDatabaseFixture>
 {
@@ -58,7 +57,7 @@ public class ReservationLifecycleMySqlTests(MySqlDatabaseFixture database) : ICl
         return await Task.WhenAll(tasks);
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task Confirm_Active_Succeeds()
     {
         using var client = database.CreateClient();
@@ -78,7 +77,7 @@ public class ReservationLifecycleMySqlTests(MySqlDatabaseFixture database) : ICl
         Assert.Equal(body.ConfirmedAtUtc, stored.ConfirmedAtUtc);
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task Confirm_Twice_DoesNotDoubleSell()
     {
         using var client = database.CreateClient();
@@ -91,7 +90,7 @@ public class ReservationLifecycleMySqlTests(MySqlDatabaseFixture database) : ICl
         await AssertStockAsync(product.Id, reserved: 0, sold: 3);
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task Cancel_Active_ReleasesInventory()
     {
         using var client = database.CreateClient();
@@ -111,7 +110,7 @@ public class ReservationLifecycleMySqlTests(MySqlDatabaseFixture database) : ICl
         Assert.Equal(ReservationStatus.Cancelled, (await GetStoredReservationAsync(product.Id)).Status);
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task Cancel_Twice_DoesNotDoubleRelease()
     {
         using var client = database.CreateClient();
@@ -127,7 +126,7 @@ public class ReservationLifecycleMySqlTests(MySqlDatabaseFixture database) : ICl
         await AssertStockAsync(product.Id, reserved: 4, sold: 0);
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task Confirm_Cancelled_Fails()
     {
         using var client = database.CreateClient();
@@ -142,7 +141,7 @@ public class ReservationLifecycleMySqlTests(MySqlDatabaseFixture database) : ICl
         Assert.Equal(ReservationStatus.Cancelled, (await GetStoredReservationAsync(product.Id)).Status);
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task Cancel_Confirmed_Fails()
     {
         using var client = database.CreateClient();
@@ -156,7 +155,7 @@ public class ReservationLifecycleMySqlTests(MySqlDatabaseFixture database) : ICl
         Assert.Equal(ReservationStatus.Confirmed, (await GetStoredReservationAsync(product.Id)).Status);
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task Confirm_Expired_FailsAndKeepsStockReserved()
     {
         using var client = database.CreateClient();
@@ -172,7 +171,7 @@ public class ReservationLifecycleMySqlTests(MySqlDatabaseFixture database) : ICl
         Assert.Equal(ReservationStatus.Active, (await GetStoredReservationAsync(product.Id)).Status);
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task ConfirmAndCancel_UnknownReservation_Returns404()
     {
         using var client = database.CreateClient();
@@ -181,7 +180,7 @@ public class ReservationLifecycleMySqlTests(MySqlDatabaseFixture database) : ICl
         Assert.Equal(HttpStatusCode.NotFound, (await Cancel(client, Guid.NewGuid())).StatusCode);
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task ConfirmAndCancel_OtherUsersReservation_Returns403AndChangesNothing()
     {
         using var owner = database.CreateClient();
@@ -195,7 +194,7 @@ public class ReservationLifecycleMySqlTests(MySqlDatabaseFixture database) : ICl
         Assert.Equal(ReservationStatus.Active, (await GetStoredReservationAsync(product.Id)).Status);
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task Admin_CanCancelAnyUsersReservation()
     {
         using var owner = database.CreateClient();
@@ -206,7 +205,7 @@ public class ReservationLifecycleMySqlTests(MySqlDatabaseFixture database) : ICl
         await AssertStockAsync(product.Id, reserved: 0, sold: 0);
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task ConcurrentConfirm_OnlyOneSucceeds()
     {
         using var client = database.CreateClient();
@@ -221,7 +220,7 @@ public class ReservationLifecycleMySqlTests(MySqlDatabaseFixture database) : ICl
         Assert.Equal(ReservationStatus.Confirmed, (await GetStoredReservationAsync(product.Id)).Status);
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task ConcurrentCancel_OnlyOneSucceeds()
     {
         using var client = database.CreateClient();
@@ -236,7 +235,7 @@ public class ReservationLifecycleMySqlTests(MySqlDatabaseFixture database) : ICl
         await AssertStockAsync(product.Id, reserved: 4, sold: 0);
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task ConcurrentConfirmVsCancel_LeavesConsistentState()
     {
         using var client = database.CreateClient();
@@ -279,7 +278,7 @@ public class ReservationLifecycleMySqlTests(MySqlDatabaseFixture database) : ICl
         Assert.Equal(10, winners.Values.Sum());
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task ConcurrentConfirm_DifferentReservationsOfSameProduct_NoLostUpdates()
     {
         using var client = database.CreateClient();

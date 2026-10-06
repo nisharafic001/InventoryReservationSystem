@@ -19,7 +19,6 @@ namespace Inventory.IntegrationTests.Reservations;
 
 /// <summary>
 /// Automatic expiry against real MySQL with a controllable clock (no real two-minute waits).
-/// Skipped unless INVENTORY_TEST_MYSQL is set.
 /// </summary>
 public class ReservationExpiryMySqlTests(MySqlDatabaseFixture database) : IClassFixture<MySqlDatabaseFixture>
 {
@@ -74,7 +73,7 @@ public class ReservationExpiryMySqlTests(MySqlDatabaseFixture database) : IClass
     private async Task<Reservation> GetReservationAsync(Guid productId, Guid reservationId) =>
         (await database.GetReservationsAsync(productId)).Single(r => r.Id == reservationId);
 
-    [MySqlFact]
+    [Fact]
     public async Task ExpiredActiveReservation_ReleasesStock()
     {
         await database.ResetAsync();
@@ -93,7 +92,7 @@ public class ReservationExpiryMySqlTests(MySqlDatabaseFixture database) : IClass
         Assert.Equal(10, stored.AvailableQuantity);
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task FutureReservation_RemainsActive()
     {
         await database.ResetAsync();
@@ -109,7 +108,7 @@ public class ReservationExpiryMySqlTests(MySqlDatabaseFixture database) : IClass
         Assert.Equal(3, (await database.GetProductAsync(product.Id)).ReservedQuantity);
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task ConfirmedReservation_NotExpired()
     {
         await database.ResetAsync();
@@ -131,7 +130,7 @@ public class ReservationExpiryMySqlTests(MySqlDatabaseFixture database) : IClass
         Assert.Equal(3, stored.SoldQuantity);
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task CancelledReservation_NotExpired()
     {
         await database.ResetAsync();
@@ -153,7 +152,7 @@ public class ReservationExpiryMySqlTests(MySqlDatabaseFixture database) : IClass
         Assert.Equal(4, (await database.GetProductAsync(product.Id)).ReservedQuantity);
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task ConcurrentExpiry_DoesNotDoubleRelease()
     {
         const int dueReservations = 40;
@@ -202,7 +201,7 @@ public class ReservationExpiryMySqlTests(MySqlDatabaseFixture database) : IClass
         Assert.Equal(195, stored.AvailableQuantity);
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task ExpiryVsConfirm_Race_ExactlyOneTransitionWins()
     {
         await database.ResetAsync();
@@ -257,7 +256,7 @@ public class ReservationExpiryMySqlTests(MySqlDatabaseFixture database) : IClass
         }
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task PoisonReservation_DoesNotBlockOtherExpiries_AndIsRolledBack()
     {
         await database.ResetAsync();
@@ -281,7 +280,7 @@ public class ReservationExpiryMySqlTests(MySqlDatabaseFixture database) : IClass
         Assert.Equal(0, (await database.GetProductAsync(corrupted.Id)).ReservedQuantity);
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task CancelVsExpiry_Race_ReleasesStockExactlyOnce()
     {
         await database.ResetAsync();
@@ -327,7 +326,7 @@ public class ReservationExpiryMySqlTests(MySqlDatabaseFixture database) : IClass
         }
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task ExpiredReservation_IsVisibleThroughApi_AndCannotBeConfirmed()
     {
         await database.ResetAsync();
@@ -352,7 +351,7 @@ public class ReservationExpiryMySqlTests(MySqlDatabaseFixture database) : IClass
         Assert.Equal(0, (await database.GetProductAsync(product.Id)).SoldQuantity);
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task Worker_ExpiresDueReservations_AndStopsGracefully()
     {
         await database.ResetAsync();
@@ -388,7 +387,7 @@ public class ReservationExpiryMySqlTests(MySqlDatabaseFixture database) : IClass
         Assert.True(worker.ExecuteTask!.IsCompletedSuccessfully);
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task Worker_StopsPromptly_WhileWaitingForNextTick()
     {
         await using var instance = BuildInstance();

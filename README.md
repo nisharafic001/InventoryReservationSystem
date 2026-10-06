@@ -98,18 +98,19 @@ A Postman collection is also included in `docs/postman/`.
 
 ## 3. How to test
 
-Quick run, no database needed (tests that need MySQL are skipped):
+Make sure Docker is running, then:
 
 ```bash
-dotnet test                     # 248 tests: 197 pass, 51 skipped (~30 s)
+dotnet test                     # 248 passed, 0 failed, 0 skipped (~2 min)
 ```
 
-Full run, including the real-MySQL and 500-request concurrency tests:
+That runs everything, including the real-MySQL and 500-request concurrency tests. The tests start their own
+temporary MySQL container and remove it at the end; you do not need to start MySQL or set anything up.
+
+To use an existing MySQL server instead (for example the one from `docker compose`), set this first:
 
 ```bash
-docker compose up -d mysql
 export INVENTORY_TEST_MYSQL="Server=localhost;Port=3306;User=root;Password=<MYSQL_ROOT_PASSWORD>"
-dotnet test                     # 248 passed, 0 failed (~2 min)
 ```
 
 Each test class creates its own temporary database and deletes it afterwards, so your data is never touched.
@@ -278,7 +279,7 @@ the database, and the database alone keeps stock correct.
 - **84 unit tests:** the business rules (allowed and forbidden status changes, expiry timing, validation, ownership,
   login).
 - **164 integration tests:** the real API from end to end, including login, permissions, error responses, logging,
-  and rate limiting. When MySQL is available, they also check saving to the database and all the race conditions.
+  and rate limiting. They also check saving to the database and all the race conditions, against a real MySQL.
 
 **Concurrency results (real MySQL):**
 

@@ -17,7 +17,7 @@ namespace Inventory.IntegrationTests.Persistence;
 
 /// <summary>
 /// Failure handling against real MySQL: lock-wait timeouts are retried and, if they persist, answered with 503;
-/// concurrent startups seeding the same user do not crash. Skipped unless INVENTORY_TEST_MYSQL is set.
+/// concurrent startups seeding the same user do not crash.
 /// </summary>
 public class ResilienceMySqlTests(MySqlDatabaseFixture database, Xunit.Abstractions.ITestOutputHelper output) : IClassFixture<MySqlDatabaseFixture>
 {
@@ -46,7 +46,7 @@ public class ResilienceMySqlTests(MySqlDatabaseFixture database, Xunit.Abstracti
         await transaction.RollbackAsync();
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task LockWaitTimeoutSetting_IsAppliedToEveryConnectionEfUses()
     {
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
@@ -68,7 +68,7 @@ public class ResilienceMySqlTests(MySqlDatabaseFixture database, Xunit.Abstracti
         }
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task LockWaitTimeout_IsRetried_AndTheReservationSucceeds()
     {
         var product = await database.SeedProductAsync(totalQuantity: 5);
@@ -94,7 +94,7 @@ public class ResilienceMySqlTests(MySqlDatabaseFixture database, Xunit.Abstracti
         Assert.Equal(2, (await database.GetProductAsync(product.Id)).ReservedQuantity);
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task PersistentLockContention_Returns503_AndChangesNothing()
     {
         var product = await database.SeedProductAsync(totalQuantity: 5);
@@ -126,7 +126,7 @@ public class ResilienceMySqlTests(MySqlDatabaseFixture database, Xunit.Abstracti
         Assert.Empty(await database.GetReservationsAsync(product.Id));
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task ConcurrentStartups_SeedingTheSameUser_DoNotFail()
     {
         var username = $"seed-race-{Guid.NewGuid():N}"[..20];

@@ -8,27 +8,15 @@ using MySqlConnector;
 namespace Inventory.IntegrationTests.Support;
 
 /// <summary>
-/// Creates a throwaway database on the configured MySQL server, applies migrations, and drops it afterwards.
-/// Does nothing when <see cref="MySqlFactAttribute.EnvironmentVariable"/> is not set.
+/// Creates a throwaway database on the test MySQL server (see <see cref="MySqlTestServer"/>), applies migrations,
+/// and drops it afterwards.
 /// </summary>
 public sealed class MySqlDatabaseFixture : IAsyncLifetime
 {
     private WebApplicationFactory<Program>? _factory;
 
-    public string ConnectionString { get; } = string.Empty;
-
-    public MySqlDatabaseFixture()
-    {
-        var baseConnectionString = Environment.GetEnvironmentVariable(MySqlFactAttribute.EnvironmentVariable);
-        if (string.IsNullOrWhiteSpace(baseConnectionString))
-            return;
-
-        ConnectionString = new MySqlConnectionStringBuilder(baseConnectionString)
-        {
-            // Kept short: Pomelo derives a migration lock name from it, and MySQL caps lock names at 64 chars.
-            Database = $"inv_test_{Guid.NewGuid():N}"[..21]
-        }.ConnectionString;
-    }
+    /// <summary>Connection string for this fixture's own database; set by <see cref="InitializeAsync"/>.</summary>
+    public string ConnectionString { get; private set; } = string.Empty;
 
     public AppDbContext CreateDbContext() => new(
         new DbContextOptionsBuilder<AppDbContext>()
@@ -82,8 +70,11 @@ public sealed class MySqlDatabaseFixture : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        if (ConnectionString.Length == 0)
-            return;
+        ConnectionString = new MySqlConnectionStringBuilder(await MySqlTestServer.GetConnectionStringAsync())
+        {
+            // Kept short: Pomelo derives a migration lock name from it, and MySQL caps lock names at 64 chars.
+            Database = $"inv_test_{Guid.NewGuid():N}"[..21]
+        }.ConnectionString;
 
         await using var context = CreateDbContext();
         await context.Database.MigrateAsync();

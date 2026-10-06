@@ -9,14 +9,14 @@ namespace Inventory.IntegrationTests.Reservations;
 /// <summary>
 /// The full HTTP stack — JWT auth and the production rate limits included — under 500 simultaneous reservations
 /// from 500 different users. Rate limiting is per client, so it must not stand between them and the database;
-/// the database alone must guarantee no oversell. Skipped unless INVENTORY_TEST_MYSQL is set.
+/// the database alone must guarantee no oversell.
 /// </summary>
 [Collection(MySqlLoadCollection.Name)]
 public class ReservationHttpConcurrencyMySqlTests(MySqlDatabaseFixture database) : IClassFixture<MySqlDatabaseFixture>
 {
     private const int Users = 500;
 
-    [MySqlFact]
+    [Fact]
     public async Task FiveHundredUsers_DefaultRateLimits_ExactlyStockSucceeds_NoneThrottled()
     {
         const int stock = 100;

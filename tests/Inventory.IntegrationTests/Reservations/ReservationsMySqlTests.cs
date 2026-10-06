@@ -9,7 +9,7 @@ using Inventory.IntegrationTests.Support;
 namespace Inventory.IntegrationTests.Reservations;
 
 /// <summary>
-/// End-to-end reservation tests through the real API, EF Core, and MySQL. Skipped unless INVENTORY_TEST_MYSQL is set.
+/// End-to-end reservation tests through the real API, EF Core, and MySQL.
 /// </summary>
 public class ReservationsMySqlTests(MySqlDatabaseFixture database) : IClassFixture<MySqlDatabaseFixture>
 {
@@ -18,7 +18,7 @@ public class ReservationsMySqlTests(MySqlDatabaseFixture database) : IClassFixtu
     private Task<HttpResponseMessage> PostReservation(HttpClient client, Guid productId, int quantity) =>
         client.PostAsJsonAsync(BaseUrl, new { productId, quantity });
 
-    [MySqlFact]
+    [Fact]
     public async Task Post_StockAvailable_Returns201AndHoldsStock()
     {
         var product = await database.SeedProductAsync(totalQuantity: 10);
@@ -47,7 +47,7 @@ public class ReservationsMySqlTests(MySqlDatabaseFixture database) : IClassFixtu
         Assert.Equal(body.ExpiresAtUtc, reservation.ExpiresAtUtc);
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task Post_ResponseUsesExpectedContract()
     {
         var product = await database.SeedProductAsync(totalQuantity: 1);
@@ -62,7 +62,7 @@ public class ReservationsMySqlTests(MySqlDatabaseFixture database) : IClassFixtu
         Assert.Equal("Active", json.RootElement.GetProperty("status").GetString());
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task Post_ExactlyRemainingStock_Succeeds_ThenNextFails()
     {
         var product = await database.SeedProductAsync(totalQuantity: 2);
@@ -74,7 +74,7 @@ public class ReservationsMySqlTests(MySqlDatabaseFixture database) : IClassFixtu
         Assert.Equal(0, (await database.GetProductAsync(product.Id)).AvailableQuantity);
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task Post_InsufficientStock_Returns409AndChangesNothing()
     {
         var product = await database.SeedProductAsync(totalQuantity: 2);
@@ -90,7 +90,7 @@ public class ReservationsMySqlTests(MySqlDatabaseFixture database) : IClassFixtu
         Assert.Empty(await database.GetReservationsAsync(product.Id));
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task Post_NonexistentProduct_Returns404()
     {
         using var client = database.CreateClient();
@@ -103,13 +103,13 @@ public class ReservationsMySqlTests(MySqlDatabaseFixture database) : IClassFixtu
         Assert.Empty(await database.GetReservationsAsync(productId));
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task Post_ZeroQuantity_Returns400AndChangesNothing()
     {
         await AssertNonPositiveQuantityRejected(0);
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task Post_NegativeQuantity_Returns400AndChangesNothing()
     {
         await AssertNonPositiveQuantityRejected(-1);
@@ -127,7 +127,7 @@ public class ReservationsMySqlTests(MySqlDatabaseFixture database) : IClassFixtu
         Assert.Empty(await database.GetReservationsAsync(product.Id));
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task Post_ConcurrentRequests_NeverOversell()
     {
         const int stock = 5;
@@ -147,7 +147,7 @@ public class ReservationsMySqlTests(MySqlDatabaseFixture database) : IClassFixtu
         Assert.Equal(stock, (await database.GetReservationsAsync(product.Id)).Count);
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task Repository_InsertFails_RollsBackStockUpdate()
     {
         var product = await database.SeedProductAsync(totalQuantity: 10);

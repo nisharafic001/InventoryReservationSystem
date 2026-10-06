@@ -8,14 +8,14 @@ namespace Inventory.IntegrationTests.Persistence;
 
 /// <summary>
 /// The container startup path: with Database:MigrateOnStartup the API creates the schema on an empty database
-/// and reports ready. Skipped unless INVENTORY_TEST_MYSQL is set.
+/// and reports ready.
 /// </summary>
 public class StartupMigrationMySqlTests
 {
-    [MySqlFact]
+    [Fact]
     public async Task MigrateOnStartup_CreatesSchemaOnEmptyDatabase_ThenReportsReady()
     {
-        var connectionString = new MySqlConnectionStringBuilder(Environment.GetEnvironmentVariable(MySqlFactAttribute.EnvironmentVariable)!)
+        var connectionString = new MySqlConnectionStringBuilder(await MySqlTestServer.GetConnectionStringAsync())
         {
             Database = $"inv_boot_{Guid.NewGuid():N}"[..21]
         }.ConnectionString;

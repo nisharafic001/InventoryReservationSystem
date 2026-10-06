@@ -17,7 +17,6 @@ namespace Inventory.IntegrationTests.Reservations;
 /// Fires hundreds of reservation attempts at one product at the same moment against real MySQL.
 /// Each attempt runs in its own DI scope (own DbContext and pooled connection), and attempts are spread across
 /// two independently built service providers with separate connection pools, standing in for two API instances.
-/// Skipped unless INVENTORY_TEST_MYSQL is set.
 /// </summary>
 [Collection(MySqlLoadCollection.Name)]
 public class ReservationConcurrencyTests(MySqlDatabaseFixture database, ITestOutputHelper output)
@@ -26,11 +25,11 @@ public class ReservationConcurrencyTests(MySqlDatabaseFixture database, ITestOut
     private const int ApiInstances = 2;
     private const int ConcurrentRequests = 500;
 
-    [MySqlFact]
+    [Fact]
     public Task SingleUnit_500ConcurrentRequests_ExactlyOneSucceeds() =>
         AssertNoOversell(totalQuantity: 1, expectedSuccesses: 1);
 
-    [MySqlFact]
+    [Fact]
     public Task HundredUnits_500ConcurrentRequests_ExactlyHundredSucceed() =>
         AssertNoOversell(totalQuantity: 100, expectedSuccesses: 100);
 

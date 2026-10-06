@@ -15,7 +15,6 @@ namespace Inventory.IntegrationTests.Auth;
 
 /// <summary>
 /// Users, the startup seeder and login against real MySQL, then the issued tokens used end to end.
-/// Skipped unless INVENTORY_TEST_MYSQL is set.
 /// </summary>
 public sealed class AuthMySqlTests(MySqlDatabaseFixture database) : IClassFixture<MySqlDatabaseFixture>, IAsyncLifetime
 {
@@ -69,7 +68,7 @@ public sealed class AuthMySqlTests(MySqlDatabaseFixture database) : IClassFixtur
         return client;
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task SeededUsers_AreStoredWithHashedPasswords()
     {
         await using var db = database.CreateDbContext();
@@ -81,7 +80,7 @@ public sealed class AuthMySqlTests(MySqlDatabaseFixture database) : IClassFixtur
         Assert.DoesNotContain(users, u => u.PasswordHash.Contains(AdminPassword) || u.PasswordHash.Contains(UserPassword));
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task Seeder_IsIdempotent_AcrossRestarts()
     {
         await using var secondStart = new InventoryApiFactory();
@@ -97,7 +96,7 @@ public sealed class AuthMySqlTests(MySqlDatabaseFixture database) : IClassFixtur
         Assert.Equal(HttpStatusCode.OK, (await LoginAsync("db-admin", AdminPassword)).StatusCode);
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task Login_AgainstMySql_ReturnsJwt_AndRejectsWrongPassword()
     {
         Assert.Equal(HttpStatusCode.OK, (await LoginAsync("db-user", UserPassword)).StatusCode);
@@ -105,13 +104,13 @@ public sealed class AuthMySqlTests(MySqlDatabaseFixture database) : IClassFixtur
         Assert.Equal(HttpStatusCode.Unauthorized, (await LoginAsync("missing-user", UserPassword)).StatusCode);
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task Login_UsernameIsCaseInsensitive()
     {
         Assert.Equal(HttpStatusCode.OK, (await LoginAsync("DB-USER", UserPassword)).StatusCode);
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task Username_IsUniqueIgnoringCase_InTheDatabase()
     {
         await using var db = database.CreateDbContext();
@@ -120,7 +119,7 @@ public sealed class AuthMySqlTests(MySqlDatabaseFixture database) : IClassFixtur
         await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
     }
 
-    [MySqlFact]
+    [Fact]
     public async Task IssuedTokens_EnforceRoles_AndOwnership_EndToEnd()
     {
         var admin = await ClientForAsync("db-admin", AdminPassword);
